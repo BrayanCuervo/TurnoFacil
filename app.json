@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TurnoFacil",
-    "slug": "turnofacil-mvp",
+    "slug": "turnofacil",
     "version": "2.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -10,11 +10,11 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.turnofacil.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "TurnoFácil usa tu ubicación para mostrarte qué tan lejos estás de la barbería."
+        "NSLocationWhenInUseUsageDescription": "TurnoFácil usa tu ubicación para mostrarte qué tan lejos estás de la barbería.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "edgeToEdgeEnabled": true,
       "package": "com.turnofacil.app",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
@@ -32,6 +32,12 @@
           "locationWhenInUsePermission": "TurnoFácil usa tu ubicación para mostrarte qué tan lejos estás de la barbería."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7c80c2c7-13f8-4e43-b773-8c11c3606e4a"
+      }
+    },
+    "owner": "brayancuervo"
   }
 }

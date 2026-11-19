@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
+// iPhone: Apple Maps nativo (no necesita clave).
+// Android: mapa de Google Maps embebido (el SDK nativo de Google pide una clave paga en el APK).
+const MapView = Platform.OS === 'ios' ? require('react-native-maps').default : null;
+const Marker = Platform.OS === 'ios' ? require('react-native-maps').Marker : null;
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +13,7 @@ import { ClockIcon, NavigationIcon, PinIcon } from '../components/Icons';
 import { FadeInView, PrimaryButton } from '../components/UI';
 
 const SHOP = { latitude: BARBERSHOP.latitude, longitude: BARBERSHOP.longitude };
+const EMBED_HTML = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,iframe{margin:0;padding:0;width:100%;height:100%;border:0;background:#141414}</style></head><body><iframe src="https://maps.google.com/maps?q=${encodeURIComponent(BARBERSHOP.address)}&z=16&hl=es&output=embed" allowfullscreen></iframe></body></html>`;
 
 // Distancia en km entre dos puntos (formula de Haversine)
 function distanceKm(a, b) {
@@ -70,6 +75,7 @@ export default function MapScreen() {
 
   return (
     <View style={styles.fill}>
+      {MapView ? (
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
@@ -80,6 +86,25 @@ export default function MapScreen() {
       >
         <Marker coordinate={SHOP} title={BARBERSHOP.name} description={BARBERSHOP.address} pinColor={colors.gold} />
       </MapView>
+      ) : (
+        <WebView
+          style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg }]}
+          originWhitelist={['*']}
+          source={{ html: EMBED_HTML, baseUrl: 'https://maps.google.com' }}
+          javaScriptEnabled
+          domStorageEnabled
+          setSupportMultipleWindows={false}
+          onShouldStartLoadWithRequest={(req) => {
+            // Si tocan "Ver en Google Maps" dentro del mapa, abrir la app de Google Maps
+            const initial = req.url.startsWith('about:') || req.url.startsWith('data:') || req.url === 'https://maps.google.com/' || req.url === 'https://maps.google.com';
+            if (req.isTopFrame && !initial && req.url.startsWith('http')) {
+              Linking.openURL(req.url);
+              return false;
+            }
+            return true;
+          }}
+        />
+      )}
 
       <View style={[styles.topPill, { top: insets.top + 10 }]}>
         <Text style={styles.topText}>Ubicación</Text>
