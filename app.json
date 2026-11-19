@@ -19,13 +19,23 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "VIBRATE"
+        "VIBRATE",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "plugins": [
       "expo-font",
       "expo-secure-store",
       "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraProguardRules": "-keep class * extends androidx.room.RoomDatabase { <init>(); }\n-keep class * extends androidx.work.InputMerger { <init>(); }"
+          }
+        }
+      ],
       [
         "expo-location",
         {
@@ -39,11 +49,11 @@
         }
       ]
     ],
+    "owner": "santicollazos15",
     "extra": {
       "eas": {
-        "projectId": "7c80c2c7-13f8-4e43-b773-8c11c3606e4a"
+        "projectId": "3cd77294-5aad-4ff4-ae3a-d46135b5feee"
       }
-    },
-    "owner": "brayancuervo"
+    }
   }
 }
