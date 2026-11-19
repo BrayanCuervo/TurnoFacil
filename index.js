@@ -1,7 +1,6 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { registerRootComponent } from 'expo';
-import App from './App';
 
 // Si algo falla, mostramos el error en pantalla en vez de cerrar la app.
 let showError = null;
@@ -41,6 +40,13 @@ class Root extends React.Component {
   }
   render() {
     if (this.state.error) return <ErrorScreen error={this.state.error} />;
+    // La app se carga aqui (no con import) para atrapar tambien errores al iniciar
+    let App;
+    try {
+      App = require('./App').default;
+    } catch (e) {
+      return <ErrorScreen error={e} />;
+    }
     return <App />;
   }
 }
