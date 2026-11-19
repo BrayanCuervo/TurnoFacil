@@ -1,97 +1,143 @@
-import React from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fonts } from '../theme';
-import { CalendarIcon, ClockIcon, PinIcon } from '../components/Icons';
-import { PrimaryButton } from '../components/UI';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { colors, fonts, imageFor, BARBERSHOP } from '../theme';
+import { errorMessage, supabase } from '../lib/supabase';
+import { formatDate, formatPrice, formatTime, hoursUntil } from '../lib/time';
+import { CalendarIcon, ClockIcon, PinIcon, UserIcon } from '../components/Icons';
+import { Chip, EmptyState, FadeInView, Loading, PrimaryButton, Screen, StatusBadge, shared } from '../components/UI';
 
-export default function AppointmentsScreen({ appointments, onCancel, onOpenServices }) {
-  const insets = useSafeAreaInsets();
+export const APPT_SELECT =
+  '*, service:services(name, image_key), barber:profiles!appointments_barber_id_fkey(full_name), client:profiles!appointments_client_id_fkey(full_name, email, phone)';
 
-  const confirmCancel = (a) =>
-    Alert.alert('Cancelar cita', `¿Deseas cancelar tu cita de ${a.service.name}?`, [
+export default function AppointmentsScreen({ profile, onOpenServices, refreshKey }) {
+  const [list, setList] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [view, setView] = useState('upcoming');
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(APPT_SELECT)
+      .eq('client_id', profile.id)
+      .order('starts_at', { ascending: false });
+    if (error) Alert.alert('Error', errorMessage(error));
+    setList(data || []);
+  }, [profile.id]);
+
+  useEffect(() => {
+    load();
+  }, [load, refreshKey]);
+
+  // Si el barbero marca la cita o el admin la cancela, se actualiza solo
+  useEffect(() => {
+    const ch = supabase
+      .channel('client-appts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `client_id=eq.${profile.id}` }, load)
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [profile.id, load]);
+
+  const refresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
+
+  const cancel = (a) => {
+    if (hoursUntil(a.starts_at) < 12) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      Alert.alert('No se puede cancelar', 'Solo puedes cancelar hasta 12 horas antes de la cita.');
+      return;
+    }
+    Alert.alert('Cancelar cita', `¿Deseas cancelar tu cita de ${a.service?.name}?`, [
       { text: 'No', style: 'cancel' },
-      { text: 'Sí, cancelar', style: 'destructive', onPress: () => onCancel(a.id) },
+      {
+        text: 'Sí, cancelar',
+        style: 'destructive',
+        onPress: async () => {
+          const { error } = await supabase.rpc('cancel_appointment', { p_id: a.id });
+          if (error) return Alert.alert('No se pudo cancelar', errorMessage(error));
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          load();
+        },
+      },
     ]);
+  };
+
+  const now = Date.now();
+  const upcoming = (list || [])
+    .filter((a) => a.status === 'scheduled' && new Date(a.ends_at).getTime() > now)
+    .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
+  const history = (list || []).filter((a) => !upcoming.includes(a));
+  const shown = view === 'upcoming' ? upcoming : history;
 
   return (
-    <ScrollView
-      style={styles.fill}
-      contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: 28, paddingHorizontal: 22, flexGrow: 1 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={styles.title}>Mis citas</Text>
-      <Text style={styles.subtitle}>Tus próximas reservas en TurnoFácil.</Text>
+    <Screen title="Mis citas" subtitle="Tus reservas en TurnoFácil." onRefresh={refresh} refreshing={refreshing}>
+      <View style={[shared.row, { marginBottom: 14 }]}>
+        <Chip label={`Próximas (${upcoming.length})`} active={view === 'upcoming'} onPress={() => setView('upcoming')} />
+        <Chip label={`Historial (${history.length})`} active={view === 'history'} onPress={() => setView('history')} />
+      </View>
 
-      {appointments.length === 0 ? (
-        <View style={styles.empty}>
-          <View style={styles.emptyIcon}>
-            <CalendarIcon size={30} color={colors.gold} />
-          </View>
-          <Text style={styles.emptyTitle}>Aún no tienes citas</Text>
-          <Text style={styles.emptyText}>Reserva tu próximo corte y aparecerá aquí.</Text>
-          <PrimaryButton title="Reservar ahora" height={52} onPress={onOpenServices} style={{ alignSelf: 'stretch', marginTop: 24 }} />
-        </View>
+      {list === null ? (
+        <Loading />
+      ) : shown.length === 0 ? (
+        <EmptyState
+          icon={CalendarIcon}
+          title={view === 'upcoming' ? 'No tienes citas próximas' : 'Aún no hay historial'}
+          text={view === 'upcoming' ? 'Reserva tu próximo corte y aparecerá aquí.' : 'Aquí verás tus citas pasadas y canceladas.'}
+        >
+          {view === 'upcoming' ? (
+            <PrimaryButton title="Reservar ahora" height={52} onPress={onOpenServices} style={{ alignSelf: 'stretch', marginTop: 24 }} />
+          ) : null}
+        </EmptyState>
       ) : (
-        appointments.map((a) => (
-          <View key={a.id} style={styles.card}>
-            <View style={styles.cardTop}>
-              <Image source={a.service.image} style={styles.thumb} />
+        shown.map((a, i) => (
+          <FadeInView key={a.id} delay={i * 60} style={shared.card}>
+            <View style={shared.row}>
+              <Image source={imageFor(a.service?.image_key)} style={styles.thumb} />
               <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.name}>{a.service.name}</Text>
-                <Text style={styles.price}>{a.service.price}</Text>
+                <Text style={shared.name}>{a.service?.name || 'Servicio'}</Text>
+                <Text style={shared.gold}>{formatPrice(a.price)}</Text>
               </View>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>Confirmada</Text>
-              </View>
+              <StatusBadge status={a.status} />
             </View>
-            <View style={styles.divider} />
-            <View style={styles.detail}>
+            <View style={shared.divider} />
+            <View style={shared.row}>
               <CalendarIcon size={16} color={colors.muted} />
-              <Text style={styles.detailText}>{a.date}</Text>
+              <Text style={styles.detail}>{formatDate(a.starts_at)}</Text>
               <View style={{ width: 16 }} />
               <ClockIcon size={15} color={colors.muted} />
-              <Text style={styles.detailText}>{a.time}</Text>
+              <Text style={styles.detail}>{formatTime(a.starts_at)}</Text>
             </View>
-            <View style={[styles.detail, { marginTop: 8 }]}>
+            <View style={[shared.row, { marginTop: 8 }]}>
+              <UserIcon size={16} color={colors.muted} />
+              <Text style={styles.detail}>Barbero: {a.barber?.full_name || '—'}</Text>
+            </View>
+            <View style={[shared.row, { marginTop: 8 }]}>
               <PinIcon size={16} color={colors.muted} />
-              <Text style={styles.detailText}>TurnoFácil Barbería - Sede Centro</Text>
+              <Text style={styles.detail}>{BARBERSHOP.address}</Text>
             </View>
-            <Pressable onPress={() => confirmCancel(a)} style={styles.cancel} hitSlop={6}>
-              <Text style={styles.cancelText}>Cancelar cita</Text>
-            </Pressable>
-          </View>
+            {a.status === 'cancelled' && a.cancel_reason ? (
+              <Text style={[shared.muted, { marginTop: 8 }]}>Motivo: {a.cancel_reason}</Text>
+            ) : null}
+            {view === 'upcoming' ? (
+              <Pressable onPress={() => cancel(a)} style={styles.cancel} hitSlop={6}>
+                <Text style={[styles.cancelText, hoursUntil(a.starts_at) < 12 && { color: colors.mutedDark }]}>
+                  {hoursUntil(a.starts_at) < 12 ? 'Ya no se puede cancelar (menos de 12 h)' : 'Cancelar cita'}
+                </Text>
+              </Pressable>
+            ) : null}
+          </FadeInView>
         ))
       )}
-    </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: colors.bg },
-  title: { fontFamily: fonts.semibold, fontSize: 28, color: colors.white, letterSpacing: -0.5 },
-  subtitle: { marginTop: 4, marginBottom: 18, fontFamily: fonts.regular, fontSize: 14, color: colors.muted },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 40 },
-  emptyIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.goldSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTitle: { marginTop: 18, fontFamily: fonts.semibold, fontSize: 18, color: colors.white },
-  emptyText: { marginTop: 6, fontFamily: fonts.regular, fontSize: 14, color: colors.muted, textAlign: 'center' },
-  card: { backgroundColor: colors.card, borderRadius: 18, padding: 14, marginBottom: 12 },
-  cardTop: { flexDirection: 'row', alignItems: 'center' },
   thumb: { width: 54, height: 54, borderRadius: 12 },
-  name: { fontFamily: fonts.semibold, fontSize: 15.5, color: colors.white },
-  price: { marginTop: 2, fontFamily: fonts.semibold, fontSize: 14, color: colors.gold },
-  badge: { backgroundColor: 'rgba(76,175,80,0.15)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
-  badgeText: { fontFamily: fonts.medium, fontSize: 11.5, color: '#6CCB72' },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.12)', marginVertical: 14 },
-  detail: { flexDirection: 'row', alignItems: 'center' },
-  detailText: { marginLeft: 7, fontFamily: fonts.regular, fontSize: 13, color: '#D0D0D0' },
+  detail: { marginLeft: 7, fontFamily: fonts.regular, fontSize: 13, color: '#D0D0D0', flexShrink: 1 },
   cancel: { marginTop: 14, alignSelf: 'flex-end' },
   cancelText: { fontFamily: fonts.medium, fontSize: 13, color: colors.error },
 });

@@ -13,6 +13,7 @@ export const colors = {
   mutedDark: '#6E6E6E',
   dark: '#1A1A1A',
   error: '#E5534B',
+  success: '#6CCB72',
 };
 
 export const fonts = {
@@ -22,44 +23,29 @@ export const fonts = {
   bold: 'Poppins-Bold',
 };
 
-// Usuario de prueba (unico usuario valido en esta version)
-export const TEST_USER = {
-  email: 'demo@turnofacil.com',
-  password: '123456',
-  name: 'Carlos Demo',
+// Imagenes disponibles para los servicios (el admin elige una al crear el servicio)
+export const SERVICE_IMAGES = {
+  'corte-clasico': require('../assets/images/corte-clasico.jpg'),
+  degradado: require('../assets/images/degradado.jpg'),
+  barba: require('../assets/images/barba.jpg'),
+  'corte-barba': require('../assets/images/corte-barba.jpg'),
+  banner: require('../assets/images/banner.jpg'),
+};
+export const imageFor = (key) => SERVICE_IMAGES[key] || SERVICE_IMAGES['corte-clasico'];
+
+export const BARBERSHOP = {
+  name: 'TurnoFácil Barbería',
+  address: 'Calle 93 # 13-28, El Chicó, Bogotá',
+  latitude: 4.6754,
+  longitude: -74.0499,
+  hours: 'Lunes a sábado · 9:00 a. m. – 7:00 p. m.',
 };
 
-export const SERVICES = [
-  {
-    id: 'corte-clasico',
-    name: 'Corte clásico',
-    price: '$25.000',
-    duration: '30 min',
-    description: 'Corte tradicional con tijera y máquina, lavado incluido.',
-    image: require('../assets/images/corte-clasico.jpg'),
-  },
-  {
-    id: 'degradado',
-    name: 'Degradado',
-    price: '$30.000',
-    duration: '40 min',
-    description: 'Fade a medida con acabado a navaja.',
-    image: require('../assets/images/degradado.jpg'),
-  },
-  {
-    id: 'barba',
-    name: 'Barba',
-    price: '$20.000',
-    duration: '25 min',
-    description: 'Perfilado, toalla caliente y aceite para barba.',
-    image: require('../assets/images/barba.jpg'),
-  },
-  {
-    id: 'corte-barba',
-    name: 'Corte + Barba',
-    price: '$40.000',
-    duration: '60 min',
-    description: 'El combo completo: corte a elección y arreglo de barba.',
-    image: require('../assets/images/corte-barba.jpg'),
-  },
-];
+export const STATUS = {
+  scheduled: { label: 'Agendada', color: '#6CCB72', bg: 'rgba(76,175,80,0.15)' },
+  attended: { label: 'Atendida', color: '#D4AF37', bg: 'rgba(212,175,55,0.16)' },
+  no_show: { label: 'No atendida', color: '#E5A04B', bg: 'rgba(229,160,75,0.15)' },
+  cancelled: { label: 'Cancelada', color: '#E5534B', bg: 'rgba(229,83,75,0.15)' },
+};
+
+export const ROLE_LABEL = { admin: 'Administrador', barber: 'Barbero', client: 'Cliente' };

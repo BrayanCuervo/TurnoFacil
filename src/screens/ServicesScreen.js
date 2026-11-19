@@ -1,10 +1,12 @@
 import React from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fonts, SERVICES } from '../theme';
+import { colors, fonts, imageFor } from '../theme';
+import { formatPrice } from '../lib/time';
+import { FadeInView } from '../components/UI';
 import { ClockIcon } from '../components/Icons';
 
-export default function ServicesScreen({ onBook }) {
+export default function ServicesScreen({ services, onBook }) {
   const insets = useSafeAreaInsets();
   return (
     <ScrollView
@@ -15,19 +17,19 @@ export default function ServicesScreen({ onBook }) {
       <Text style={styles.title}>Servicios</Text>
       <Text style={styles.subtitle}>Elige tu servicio y reserva en segundos.</Text>
 
-      {SERVICES.map((s) => (
-        <View key={s.id} style={styles.row}>
-          <Image source={s.image} style={styles.thumb} resizeMode="cover" />
+      {services.map((s, i) => (
+        <FadeInView key={s.id} delay={i * 60} style={styles.row}>
+          <Image source={imageFor(s.image_key)} style={styles.thumb} resizeMode="cover" />
           <View style={styles.info}>
             <Text style={styles.name}>{s.name}</Text>
             <Text style={styles.desc} numberOfLines={2}>
               {s.description}
             </Text>
             <View style={styles.meta}>
-              <Text style={styles.price}>{s.price}</Text>
+              <Text style={styles.price}>{formatPrice(s.price)}</Text>
               <View style={styles.duration}>
                 <ClockIcon size={13} color="#9A9A9A" />
-                <Text style={styles.durationText}>{s.duration}</Text>
+                <Text style={styles.durationText}>{s.duration_min} min</Text>
               </View>
             </View>
           </View>
@@ -37,7 +39,7 @@ export default function ServicesScreen({ onBook }) {
           >
             <Text style={styles.bookText}>Reservar</Text>
           </Pressable>
-        </View>
+        </FadeInView>
       ))}
     </ScrollView>
   );

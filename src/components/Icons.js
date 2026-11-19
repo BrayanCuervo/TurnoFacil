@@ -171,3 +171,60 @@ export const PinIcon = ({ size = 16, color }) => (
     <Circle cx="12" cy="10" r="3" />
   </Svg>
 );
+
+export const MapIcon = ({ size = 24, color }) => (
+  <Svg {...base(size, color)}>
+    <Polyline points="3,6.5 9,4 15,6.5 21,4 21,17.5 15,20 9,17.5 3,20 3,6.5" />
+    <Line x1="9" y1="4" x2="9" y2="17.5" />
+    <Line x1="15" y1="6.5" x2="15" y2="20" />
+  </Svg>
+);
+
+export const UsersIcon = ({ size = 24, color }) => (
+  <Svg {...base(size, color)}>
+    <Circle cx="9" cy="8" r="3.5" />
+    <Path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+    <Path d="M16 4.6a3.5 3.5 0 0 1 0 6.8" />
+    <Path d="M18 14.2a6.5 6.5 0 0 1 3.5 5.8" />
+  </Svg>
+);
+
+export const InboxIcon = ({ size = 24, color }) => (
+  <Svg {...base(size, color)}>
+    <Polyline points="21.5,12.5 16,12.5 14,15.5 10,15.5 8,12.5 2.5,12.5" />
+    <Path d="M5.5 5h13l3 7.5V18a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-5.5z" />
+  </Svg>
+);
+
+export const PlusIcon = ({ size = 20, color }) => (
+  <Svg {...base(size, color, 2.2)}>
+    <Line x1="12" y1="5" x2="12" y2="19" />
+    <Line x1="5" y1="12" x2="19" y2="12" />
+  </Svg>
+);
+
+export const CheckIcon = ({ size = 20, color }) => (
+  <Svg {...base(size, color, 2.6)}>
+    <Polyline points="5,12.5 10,17.5 19,7" />
+  </Svg>
+);
+
+export const CloseIcon = ({ size = 20, color }) => (
+  <Svg {...base(size, color, 2.2)}>
+    <Line x1="6" y1="6" x2="18" y2="18" />
+    <Line x1="18" y1="6" x2="6" y2="18" />
+  </Svg>
+);
+
+export const PhoneIcon = ({ size = 20, color }) => (
+  <Svg {...base(size, color)}>
+    <Rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+    <Line x1="11" y1="18" x2="13" y2="18" />
+  </Svg>
+);
+
+export const NavigationIcon = ({ size = 20, color }) => (
+  <Svg {...base(size, color)}>
+    <Path d="M3 11 21 3l-8 18-2-8z" />
+  </Svg>
+);

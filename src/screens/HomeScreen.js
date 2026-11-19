@@ -12,7 +12,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fonts, SERVICES } from '../theme';
+import { colors, fonts, imageFor } from '../theme';
+import { formatPrice } from '../lib/time';
+import { FadeInView } from '../components/UI';
 import { ClockIcon, FilterIcon, SearchIcon } from '../components/Icons';
 
 const PAD = 22;
@@ -24,16 +26,16 @@ export function ServiceCard({ service, width, onPress }) {
       onPress={onPress}
       style={({ pressed }) => [styles.card, { width, opacity: pressed ? 0.85 : 1 }]}
     >
-      <Image source={service.image} style={{ width, height: width * 0.62 }} resizeMode="cover" />
+      <Image source={imageFor(service.image_key)} style={{ width, height: width * 0.62 }} resizeMode="cover" />
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={1}>
           {service.name}
         </Text>
         <View style={styles.cardMeta}>
-          <Text style={styles.cardPrice}>{service.price}</Text>
+          <Text style={styles.cardPrice}>{formatPrice(service.price)}</Text>
           <View style={styles.duration}>
             <ClockIcon size={13} color="#9A9A9A" />
-            <Text style={styles.durationText}>{service.duration}</Text>
+            <Text style={styles.durationText}>{service.duration_min} min</Text>
           </View>
         </View>
       </View>
@@ -41,13 +43,14 @@ export function ServiceCard({ service, width, onPress }) {
   );
 }
 
-export default function HomeScreen({ onOpenServices, onBook }) {
+export default function HomeScreen({ services, onOpenServices, onBook, profile }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [query, setQuery] = useState('');
   const cardW = (width - PAD * 2 - GAP) / 2;
 
-  const list = SERVICES.filter((s) => s.name.toLowerCase().includes(query.trim().toLowerCase()));
+  const combo = services.find((s) => /barba/i.test(s.name) && /corte/i.test(s.name)) || services[0];
+  const list = services.filter((s) => s.name.toLowerCase().includes(query.trim().toLowerCase()));
 
   return (
     <ScrollView
@@ -87,11 +90,11 @@ export default function HomeScreen({ onOpenServices, onBook }) {
           style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
         />
         <View style={styles.bannerContent}>
-          <Text style={styles.bannerKicker}>Esta semana</Text>
-          <Text style={styles.bannerTitle}>20% off en tu</Text>
-          <Text style={[styles.bannerTitle, styles.bannerGold]}>Corte +{'\n'}Barba</Text>
+          <Text style={styles.bannerKicker}>Hola, {(profile?.full_name || '').split(' ')[0]}</Text>
+          <Text style={styles.bannerTitle}>Agenda tu</Text>
+          <Text style={[styles.bannerTitle, styles.bannerGold]}>{combo ? combo.name : 'próximo corte'}</Text>
           <Pressable
-            onPress={() => onBook(SERVICES[3])}
+            onPress={() => combo && onBook(combo)}
             style={({ pressed }) => [styles.bannerBtn, pressed && { opacity: 0.85 }]}
           >
             <Text style={styles.bannerBtnText}>Reservar ahora</Text>
@@ -107,8 +110,10 @@ export default function HomeScreen({ onOpenServices, onBook }) {
       </View>
 
       <View style={styles.grid}>
-        {list.map((s) => (
-          <ServiceCard key={s.id} service={s} width={cardW} onPress={() => onBook(s)} />
+        {list.map((s, i) => (
+          <FadeInView key={s.id} delay={i * 70}>
+            <ServiceCard service={s} width={cardW} onPress={() => onBook(s)} />
+          </FadeInView>
         ))}
         {list.length === 0 && <Text style={styles.empty}>No encontramos servicios con ese nombre.</Text>}
       </View>

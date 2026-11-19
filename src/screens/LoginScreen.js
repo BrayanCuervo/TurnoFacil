@@ -13,11 +13,11 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fonts, TEST_USER } from '../theme';
+import { colors, fonts } from '../theme';
+import { errorMessage, supabase } from '../lib/supabase';
 import { BrandName, LogoMark, PrimaryButton } from '../components/UI';
-import { AppleIcon, EyeIcon, EyeOffIcon, GoogleIcon, LockIcon, MailIcon } from '../components/Icons';
+import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from '../components/Icons';
 
-const soon = () => Alert.alert('Próximamente', 'Esta opción estará disponible en la próxima versión.');
 
 function Field({ label, icon: Icon, focused, children, right, style }) {
   return (
@@ -32,7 +32,7 @@ function Field({ label, icon: Icon, focused, children, right, style }) {
   );
 }
 
-export default function LoginScreen({ onSuccess, onBack }) {
+export default function LoginScreen({ onBack, onRegister, onForgot }) {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,26 +42,25 @@ export default function LoginScreen({ onSuccess, onBack }) {
   const [loading, setLoading] = useState(false);
   const passRef = useRef(null);
 
-  const submit = () => {
+  const submit = async () => {
     setError('');
-    const ok =
-      email.trim().toLowerCase() === TEST_USER.email && password === TEST_USER.password;
     if (!email.trim() || !password) {
       setError('Ingresa tu correo y contraseña.');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       return;
     }
-    if (!ok) {
-      setError('Correo o contraseña incorrectos.');
+    setLoading(true);
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+    setLoading(false);
+    if (err) {
+      setError(errorMessage(err));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       return;
     }
-    setLoading(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    setTimeout(() => {
-      setLoading(false);
-      onSuccess();
-    }, 600);
   };
 
   return (
@@ -148,7 +147,7 @@ export default function LoginScreen({ onSuccess, onBack }) {
 
           <View style={styles.forgotRow}>
             {error ? <Text style={styles.error}>{error}</Text> : <View />}
-            <Pressable onPress={soon} hitSlop={8}>
+            <Pressable onPress={onForgot} hitSlop={8}>
               <Text style={styles.forgot}>¿Olvidaste tu contraseña?</Text>
             </Pressable>
           </View>
@@ -161,27 +160,9 @@ export default function LoginScreen({ onSuccess, onBack }) {
             style={{ marginTop: 22 }}
           />
 
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>o continúa con</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <View style={styles.socialRow}>
-            <Pressable onPress={soon} style={({ pressed }) => [styles.social, pressed && { opacity: 0.7 }]}>
-              <GoogleIcon size={17} />
-              <Text style={styles.socialText}>Google</Text>
-            </Pressable>
-            <View style={{ width: 13 }} />
-            <Pressable onPress={soon} style={({ pressed }) => [styles.social, pressed && { opacity: 0.7 }]}>
-              <AppleIcon size={18} />
-              <Text style={styles.socialText}>Apple</Text>
-            </Pressable>
-          </View>
-
           <View style={styles.registerRow}>
             <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-            <Pressable onPress={soon} hitSlop={8}>
+            <Pressable onPress={onRegister} hitSlop={8}>
               <Text style={styles.registerLink}>Regístrate</Text>
             </Pressable>
           </View>

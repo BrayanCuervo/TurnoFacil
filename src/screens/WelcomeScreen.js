@@ -1,11 +1,11 @@
 import React from 'react';
-import { Alert, ImageBackground, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ImageBackground, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts } from '../theme';
-import { LogoMark, OutlineButton, PrimaryButton } from '../components/UI';
+import { AnimatedLogo, FadeInView, OutlineButton, PrimaryButton } from '../components/UI';
 
-export default function WelcomeScreen({ onLogin }) {
+export default function WelcomeScreen({ onLogin, onRegister }) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
 
@@ -22,7 +22,7 @@ export default function WelcomeScreen({ onLogin }) {
       />
 
       <View style={[styles.brandBlock, { paddingTop: height * 0.255 }]}>
-        <LogoMark size={104} />
+        <AnimatedLogo size={104} />
         <Text style={styles.title}>
           Turno<Text style={{ color: colors.gold }}>Fácil</Text>
         </Text>
@@ -33,14 +33,10 @@ export default function WelcomeScreen({ onLogin }) {
         </View>
       </View>
 
-      <View style={[styles.actions, { paddingBottom: insets.bottom + 52 }]}>
+      <FadeInView delay={500} distance={30} style={[styles.actions, { paddingBottom: insets.bottom + 52 }]}>
         <PrimaryButton title="Iniciar sesión" onPress={onLogin} />
-        <OutlineButton
-          title="Crear cuenta"
-          style={{ marginTop: 14 }}
-          onPress={() => Alert.alert('Próximamente', 'El registro estará disponible en la próxima versión.')}
-        />
-      </View>
+        <OutlineButton title="Crear cuenta" style={{ marginTop: 14 }} onPress={onRegister} />
+      </FadeInView>
     </ImageBackground>
   );
 }

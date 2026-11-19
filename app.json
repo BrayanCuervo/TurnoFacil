@@ -2,20 +2,36 @@
   "expo": {
     "name": "TurnoFacil",
     "slug": "turnofacil-mvp",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#141414",
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.turnofacil.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "TurnoFácil usa tu ubicación para mostrarte qué tan lejos estás de la barbería."
+      }
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.turnofacil.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "VIBRATE"
+      ]
     },
     "plugins": [
       "expo-font",
       "expo-secure-store",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "TurnoFácil usa tu ubicación para mostrarte qué tan lejos estás de la barbería."
+        }
+      ]
     ]
   }
 }
