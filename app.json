@@ -31,6 +31,12 @@
         {
           "locationWhenInUsePermission": "TurnoFácil usa tu ubicación para mostrarte qué tan lejos estás de la barbería."
         }
+      ],
+      [
+        "react-native-maps",
+        {
+          "androidGoogleMapsApiKey": "AIzaSyBFzjZYzRIL2Hi3Qj9VyioRtuWM-80A8nM"
+        }
       ]
     ],
     "extra": {
